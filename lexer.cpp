@@ -11,10 +11,6 @@ enum TokenType {
     KEYWORD, IDENTIFIER, INTEGER, REAL, OPERATOR, SEPARATOR, UNKNOWN
 };
 
-
-
-
-
 // Token structure
 struct Token {
     TokenType type;
@@ -34,6 +30,19 @@ regex separatorRegex("[(),{};]");
 // Function to check if a string is a keyword
 bool isKeyword(const string& word) {
     return find(keywords.begin(), keywords.end(), word) != keywords.end();
+}
+
+// Function to convert TokenType enum to string
+string tokenTypeToString(TokenType type) {
+    switch (type) {
+        case KEYWORD: return "KEYWORD";
+        case IDENTIFIER: return "IDENTIFIER";
+        case INTEGER: return "INTEGER";
+        case REAL: return "REAL";
+        case OPERATOR: return "OPERATOR";
+        case SEPARATOR: return "SEPARATOR";
+        default: return "UNKNOWN";
+    }
 }
 
 // Lexical Analyzer: Tokenize the input program
@@ -88,9 +97,8 @@ vector<Token> lexicalAnalyzer(const string& input) {
 
 // Syntax Analyzer: A simple parsing method (this can be extended as per the BNF rules)
 bool syntaxAnalyzer(const vector<Token>& tokens) {
-    // This is just a placeholder. You would implement the actual BNF parsing here.
     for (const Token& token : tokens) {
-        cout << "Token Type: " << token.type << ", Value: " << token.value << endl;
+        cout << "Token: " << tokenTypeToString(token.type) << ", Lexeme: " << token.value << endl;
     }
     return true; // Assume it's always valid for now.
 }
