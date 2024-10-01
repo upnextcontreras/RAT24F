@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <regex>
@@ -97,8 +98,10 @@ vector<Token> lexicalAnalyzer(const string& input) {
 
 // Syntax Analyzer: A simple parsing method (this can be extended as per the BNF rules)
 bool syntaxAnalyzer(const vector<Token>& tokens) {
+    // Adjusting the width for both "Token" and "Lexeme" columns
+    cout << left << setw(15) << "Token" << setw(25) << "Lexeme" << endl; // Header
     for (const Token& token : tokens) {
-        cout << "Token: " << tokenTypeToString(token.type) << ", Lexeme: " << token.value << endl;
+        cout << left << setw(15) << tokenTypeToString(token.type) << setw(25) << token.value << endl; // Aligned output
     }
     return true; // Assume it's always valid for now.
 }
