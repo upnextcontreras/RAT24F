@@ -90,9 +90,28 @@ vector<Token> lexicalAnalyzer(const string& input) {
 
     for (char ch : input) {
         CharType charType = getCharType(ch);
+
         if (isspace(ch)) {
+            // Handle token at the end of whitespace
             if (!token.empty()) {
-                // Classify the token using regex or keyword check
+                if (isKeyword(token)) {
+                    tokens.push_back({KEYWORD, token});
+                } else if (regex_match(token, identifierRegex)) {
+                    tokens.push_back({IDENTIFIER, token});
+                } else if (regex_match(token, integerRegex)) {
+                    tokens.push_back({INTEGER, token});
+                } else if (regex_match(token, realRegex)) {
+                    tokens.push_back({REAL, token});
+                } else {
+                    tokens.push_back({UNKNOWN, token});
+                }
+                token.clear();
+                currentState = UNKNOWN; // Reset state
+            }
+        } else if (regex_match(string(1, ch), operatorRegex)) {
+            // Handle operator
+            if (!token.empty()) {
+                // Classify previous token
                 if (isKeyword(token)) {
                     tokens.push_back({KEYWORD, token});
                 } else if (regex_match(token, identifierRegex)) {
@@ -106,18 +125,30 @@ vector<Token> lexicalAnalyzer(const string& input) {
                 }
                 token.clear();
             }
-        } else {
-            // Transition the state based on the character type
-            currentState = transitionTable[currentState][charType];
-            if (regex_match(string(1, ch), operatorRegex) || regex_match(string(1, ch), separatorRegex)) {
-                if (!token.empty()) {
-                    tokens.push_back({currentState, token});
-                    token.clear();
+            tokens.push_back({OPERATOR, string(1, ch)}); // Add operator as a token
+            currentState = UNKNOWN; // Reset state
+        } else if (regex_match(string(1, ch), separatorRegex)) {
+            // Handle separator
+            if (!token.empty()) {
+                // Classify previous token
+                if (isKeyword(token)) {
+                    tokens.push_back({KEYWORD, token});
+                } else if (regex_match(token, identifierRegex)) {
+                    tokens.push_back({IDENTIFIER, token});
+                } else if (regex_match(token, integerRegex)) {
+                    tokens.push_back({INTEGER, token});
+                } else if (regex_match(token, realRegex)) {
+                    tokens.push_back({REAL, token});
+                } else {
+                    tokens.push_back({UNKNOWN, token});
                 }
-                tokens.push_back({currentState, string(1, ch)});
-            } else {
-                token += ch;
+                token.clear();
             }
+            tokens.push_back({SEPARATOR, string(1, ch)}); // Add separator as a token
+            currentState = UNKNOWN; // Reset state
+        } else {
+            // Continue building the token
+            token += ch;
         }
     }
 
