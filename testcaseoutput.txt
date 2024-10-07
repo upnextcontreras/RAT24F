@@ -1,0 +1,69 @@
+// Test Case 1: Function to Convert Fahrenheit to Celsius
+
+Token        Lexeme
+-------------------
+KEYWORD      function
+IDENTIFIER   convert
+SEPARATOR    (
+IDENTIFIER   fahr
+KEYWORD      integer
+SEPARATOR    )
+SEPARATOR    {
+KEYWORD      return
+INTEGER      5
+OPERATOR     *
+SEPARATOR    (
+IDENTIFIER   fahr
+OPERATOR     -
+INTEGER      32
+SEPARATOR    )
+OPERATOR     /
+INTEGER      9
+SEPARATOR    ;
+SEPARATOR    }
+
+--------------------------------------
+
+// Test Case 2: Function to Add Two Integers
+
+Token        Lexeme
+-------------------
+KEYWORD      function
+IDENTIFIER   add
+SEPARATOR    (
+IDENTIFIER   a
+KEYWORD      integer
+SEPARATOR    ,
+IDENTIFIER   b
+KEYWORD      integer
+SEPARATOR    )
+SEPARATOR    {
+KEYWORD      return
+IDENTIFIER   a
+OPERATOR     +
+IDENTIFIER   b
+SEPARATOR    ;
+SEPARATOR    }
+
+--------------------------------------
+
+// Test Case 3: Function to Multiply Two Integers
+
+Token        Lexeme
+-------------------
+KEYWORD      function
+IDENTIFIER   multiply
+SEPARATOR    (
+IDENTIFIER   x
+KEYWORD      integer
+SEPARATOR    ,
+IDENTIFIER   y
+KEYWORD      integer
+SEPARATOR    )
+SEPARATOR    {
+KEYWORD      return
+IDENTIFIER   x
+OPERATOR     *
+IDENTIFIER   y
+SEPARATOR    ;
+SEPARATOR    }
