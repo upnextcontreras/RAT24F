@@ -4,6 +4,7 @@
 #include <vector>
 #include <regex>
 #include <map>
+#include <fstream>
 
 using namespace std;
 
@@ -185,12 +186,32 @@ bool syntaxAnalyzer(const vector<Token>& tokens) {
     return true; // Assume it's always valid for now.
 }
 
-// Execute a simple Rat24F function (for demonstration)
-void executeProgram(const vector<Token>& tokens) {
-    // Implement execution logic here based on the token sequence.
-    cout << "Executing the program..." << endl;
-    for (const Token& token : tokens) {
-        cout << token.value << " ";
+// Function to process input from a file
+void processInputFromFile(const string &filename) {
+    ifstream infile(filename);  // Open the file
+    if (!infile) {
+        cerr << "Error opening file!" << endl;
+        return;
     }
-    cout << endl;
+
+    string line, input;
+    while (getline(infile, line)) {
+        input += line + "\n";  // Append each line to input
+    }
+    
+    infile.close();  // Close the file after processing
+
+    // Perform lexical analysis
+    vector<Token> tokens = lexicalAnalyzer(input);
+    
+    // Perform syntax analysis
+    syntaxAnalyzer(tokens);
+}
+
+// Main function
+int main() {
+    string filename = "t1.txt";  // The .txt file containing test cases
+    processInputFromFile(filename);  // Process the input from the file
+    
+    return 0;
 }
