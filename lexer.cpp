@@ -19,15 +19,15 @@ struct Token {
     string value;
 };
 
-// List of keywords
-vector<string> keywords = {"function", "integer", "real", "boolean", "if", "else", "fi", "while", "return", "get", "put", "true", "false"};
+// List of Rat24F keywords
+vector<string> keywords = {"function", "integer", "real", "boolean", "if", "else", "fi", "while", "return", "get", "put", "false", "true"};
 
-// Updated regular expressions
-regex identifierRegex("[a-zA-Z][a-zA-Z0-9]*");  // Starts with a letter, followed by letters or digits
-regex integerRegex("^[0-9]+$");                 // Only digits for integers
-regex realRegex("^[0-9]+\\.[0-9]+$");           // Format for real numbers: digits followed by a decimal point and more digits
-regex operatorRegex("[=><!\\+-/*]+");
-regex separatorRegex("[(),{};]@");
+// Regular expressions for matching tokens
+regex identifierRegex("^[a-zA-Z]+[a-zA-Z0-9]*$");
+regex integerRegex("^(0|[1-9][0-9]*)$"); // Updated to handle leading zeros as a single zero
+regex realRegex("^(0|[1-9][0-9]*)?\\.[0-9]+$"); // Adjusted for leading/trailing decimals
+regex operatorRegex("(!=|>=|<=|==|[=><!\\+-/*])"); // Recognizes compound operators
+regex separatorRegex("[(),{};@]");
 
 // Define character types
 enum CharType {
@@ -43,6 +43,28 @@ CharType getCharType(char ch) {
     if (string(",(){};@").find(ch) != string::npos) return SEPARATOR_CHAR;
     return OTHER;
 }
+
+// Transition table for character type and current token type
+map<TokenType, map<CharType, TokenType>> transitionTable = {
+    {IDENTIFIER, {
+        {ALPHA, IDENTIFIER}, {DIGIT, IDENTIFIER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, IDENTIFIER}, {OTHER, UNKNOWN}
+    }},
+    {INTEGER, {
+        {ALPHA, UNKNOWN}, {DIGIT, INTEGER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, INTEGER}, {OTHER, UNKNOWN}
+    }},
+    {REAL, {
+        {ALPHA, UNKNOWN}, {DIGIT, REAL}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, REAL}, {OTHER, UNKNOWN}
+    }},
+    {OPERATOR, {
+        {ALPHA, IDENTIFIER}, {DIGIT, INTEGER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, OPERATOR}, {OTHER, UNKNOWN}
+    }},
+    {SEPARATOR, {
+        {ALPHA, IDENTIFIER}, {DIGIT, INTEGER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, SEPARATOR}, {OTHER, UNKNOWN}
+    }},
+    {UNKNOWN, {
+        {ALPHA, UNKNOWN}, {DIGIT, UNKNOWN}, {OPERATOR_CHAR, UNKNOWN}, {SEPARATOR_CHAR, UNKNOWN}, {SPACE, UNKNOWN}, {OTHER, UNKNOWN}
+    }}
+};
 
 // Function to check if a string is a keyword
 bool isKeyword(const string& word) {
@@ -67,11 +89,20 @@ vector<Token> lexicalAnalyzer(const string& input) {
     vector<Token> tokens;
     string token;
     TokenType currentState = UNKNOWN;
-    size_t i = 0;
 
-    while (i < input.size()) {
+    for (size_t i = 0; i < input.length(); ++i) {
         char ch = input[i];
         CharType charType = getCharType(ch);
+
+        // Handle compound operators (lookahead for next character)
+        if (regex_match(string(1, ch), operatorRegex) && i + 1 < input.length()) {
+            string potentialOp = string(1, ch) + input[i + 1];
+            if (regex_match(potentialOp, operatorRegex)) {
+                tokens.push_back({OPERATOR, potentialOp});
+                ++i; // Skip the next character
+                continue;
+            }
+        }
 
         if (isspace(ch)) {
             // Handle token at the end of whitespace
@@ -88,18 +119,10 @@ vector<Token> lexicalAnalyzer(const string& input) {
                     tokens.push_back({UNKNOWN, token});
                 }
                 token.clear();
-                currentState = UNKNOWN; // Reset state
+                currentState = UNKNOWN;
             }
-            i++; // Move to next character
-        } else if (i + 3 < input.size() && input.substr(i, 4) == "+-**") {
-            // Check for multi-character operator `+-**`
-            tokens.push_back({OPERATOR, "+-**"});
-            i += 4; // Skip all 4 characters
-            currentState = UNKNOWN; // Reset state
         } else if (regex_match(string(1, ch), operatorRegex)) {
-            // Handle single or two-character operators
             if (!token.empty()) {
-                // Classify previous token
                 if (isKeyword(token)) {
                     tokens.push_back({KEYWORD, token});
                 } else if (regex_match(token, identifierRegex)) {
@@ -113,21 +136,10 @@ vector<Token> lexicalAnalyzer(const string& input) {
                 }
                 token.clear();
             }
-            
-            // Check for two-character operators (e.g., `!=`, `>=`, `<=`)
-            string twoCharOp = i + 1 < input.size() ? string(1, ch) + input[i + 1] : "";
-            if (twoCharOp == "!=" || twoCharOp == ">=" || twoCharOp == "<=") {
-                tokens.push_back({OPERATOR, twoCharOp});
-                i += 2; // Skip both characters
-            } else {
-                tokens.push_back({OPERATOR, string(1, ch)}); // Add single-character operator
-                i++; // Move to next character
-            }
-            currentState = UNKNOWN; // Reset state
+            tokens.push_back({OPERATOR, string(1, ch)});
+            currentState = UNKNOWN;
         } else if (regex_match(string(1, ch), separatorRegex)) {
-            // Handle separator
             if (!token.empty()) {
-                // Classify previous token
                 if (isKeyword(token)) {
                     tokens.push_back({KEYWORD, token});
                 } else if (regex_match(token, identifierRegex)) {
@@ -141,13 +153,10 @@ vector<Token> lexicalAnalyzer(const string& input) {
                 }
                 token.clear();
             }
-            tokens.push_back({SEPARATOR, string(1, ch)}); // Add separator as a token
-            i++; // Move to next character
-            currentState = UNKNOWN; // Reset state
+            tokens.push_back({SEPARATOR, string(1, ch)});
+            currentState = UNKNOWN;
         } else {
-            // Continue building the token
             token += ch;
-            i++; // Move to next character
         }
     }
 
@@ -171,19 +180,16 @@ vector<Token> lexicalAnalyzer(const string& input) {
 
 // Syntax Analyzer: A simple parsing method (this can be extended as per the BNF rules)
 bool syntaxAnalyzer(const vector<Token>& tokens) {
-    // Print headers
     cout << left << setw(15) << "Token" << "Lexeme" << endl;
     cout << "-------------------------------" << endl;
-    
-    // Print each token and lexeme with alignment
+
     for (const Token& token : tokens) {
         cout << left << setw(15) << tokenTypeToString(token.type) << token.value << endl;
     }
-    
-    return true; // Assume it's always valid for now.
+    return true;
 }
 
-// Function to process input from a file
+// Function to process input from a file, ignoring comments
 void processInputFromFile(const string &filename) {
     ifstream infile(filename);  // Open the file
     if (!infile) {
@@ -193,22 +199,25 @@ void processInputFromFile(const string &filename) {
 
     string line, input;
     while (getline(infile, line)) {
-        input += line + "\n";  // Append each line to input
+        // Ignore lines starting with "[*"
+        if (line.rfind("[*", 0) == 0) {
+            continue;
+        }
+        input += line + "\n";  // Append each line to input if it doesn't start with "[*"
     }
-    
+
     infile.close();  // Close the file after processing
 
     // Perform lexical analysis
     vector<Token> tokens = lexicalAnalyzer(input);
-    
+
     // Perform syntax analysis
     syntaxAnalyzer(tokens);
 }
 
 // Main function
 int main() {
-    string filename = "t1.txt";  // The .txt file containing test cases
-    processInputFromFile(filename);  // Process the input from the file
-    
+    string filename = "t1.txt";
+    processInputFromFile(filename);
     return 0;
 }
