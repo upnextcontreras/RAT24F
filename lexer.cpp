@@ -146,6 +146,15 @@ vector<Token> lexicalAnalyzer(const string& input) {
                 }
                 token.clear();
             }
+            // Check for multi-character operator (e.g., !=, >=, <=)
+            if (i + 1 < input.length()) {
+                string twoCharOp = string(1, ch) + input[i + 1];
+                if (twoCharOp == "!=" || twoCharOp == ">=" || twoCharOp == "<=") {
+                    tokens.push_back({OPERATOR, twoCharOp}); // Add multi-character operator
+                    i++;  // Skip next character as it's part of the operator
+                    continue;
+                }
+            }
             tokens.push_back({SEPARATOR, string(1, ch)}); // Add separator as a token
             currentState = UNKNOWN; // Reset state
         } else {
