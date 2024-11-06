@@ -20,14 +20,14 @@ struct Token {
 };
 
 // List of Rat24F keywords
-vector<string> keywords = {"function", "integer", "real", "boolean", "if", "else", "fi", "while", "return", "get", "put"};
+vector<string> keywords = {"function", "integer", "real", "boolean", "if", "else", "fi", "while", "return", "get", "put", "false", "true"};
 
 // Regular expressions for matching tokens
 regex identifierRegex("[a-zA-Z]+[a-zA-Z0-9]*");
 regex integerRegex("[0-9]+");
 regex realRegex("[0-9]+\\.[0-9]+");
 regex operatorRegex("[=><!\\+-/*]");
-regex separatorRegex("[(),{};]");
+regex separatorRegex("[(),{};@]");
 
 // Define character types
 enum CharType {
@@ -40,7 +40,7 @@ CharType getCharType(char ch) {
     if (isdigit(ch)) return DIGIT;
     if (ch == ' ' || ch == '\t' || ch == '\n') return SPACE;
     if (string("+-=*/><!").find(ch) != string::npos) return OPERATOR_CHAR;
-    if (string(",(){};").find(ch) != string::npos) return SEPARATOR_CHAR;
+    if (string(",(){};@").find(ch) != string::npos) return SEPARATOR_CHAR;
     return OTHER;
 }
 
