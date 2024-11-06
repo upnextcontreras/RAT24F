@@ -23,11 +23,11 @@ struct Token {
 vector<string> keywords = {"function", "integer", "real", "boolean", "if", "else", "fi", "while", "return", "get", "put", "false", "true"};
 
 // Regular expressions for matching tokens
-regex identifierRegex("^[a-zA-Z]+[a-zA-Z0-9]*$");
-regex integerRegex("^(0|[1-9][0-9]*)$"); // Updated to handle leading zeros as a single zero
-regex realRegex("^(0|[1-9][0-9]*)?\\.[0-9]+$"); // Adjusted for leading/trailing decimals
+regex identifierRegex("^[a-zA-Z][a-zA-Z0-9]*$"); // Identifiers start with a letter, followed by alphanumeric characters
+regex integerRegex("^(0|[1-9][0-9]*)$");         // Only integers without decimals, handling leading zeros as "0"
+regex realRegex("^(0|[1-9][0-9]*)?\\.[0-9]+$");  // Real numbers with optional leading integer part
 regex operatorRegex("(!=|>=|<=|==|[=><!\\+-/*])"); // Recognizes compound operators
-regex separatorRegex("[(),{};@]");
+regex separatorRegex("[(),{};@]");               // Separators
 
 // Define character types
 enum CharType {
@@ -43,28 +43,6 @@ CharType getCharType(char ch) {
     if (string(",(){};@").find(ch) != string::npos) return SEPARATOR_CHAR;
     return OTHER;
 }
-
-// Transition table for character type and current token type
-map<TokenType, map<CharType, TokenType>> transitionTable = {
-    {IDENTIFIER, {
-        {ALPHA, IDENTIFIER}, {DIGIT, IDENTIFIER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, IDENTIFIER}, {OTHER, UNKNOWN}
-    }},
-    {INTEGER, {
-        {ALPHA, UNKNOWN}, {DIGIT, INTEGER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, INTEGER}, {OTHER, UNKNOWN}
-    }},
-    {REAL, {
-        {ALPHA, UNKNOWN}, {DIGIT, REAL}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, REAL}, {OTHER, UNKNOWN}
-    }},
-    {OPERATOR, {
-        {ALPHA, IDENTIFIER}, {DIGIT, INTEGER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, OPERATOR}, {OTHER, UNKNOWN}
-    }},
-    {SEPARATOR, {
-        {ALPHA, IDENTIFIER}, {DIGIT, INTEGER}, {OPERATOR_CHAR, OPERATOR}, {SEPARATOR_CHAR, SEPARATOR}, {SPACE, SEPARATOR}, {OTHER, UNKNOWN}
-    }},
-    {UNKNOWN, {
-        {ALPHA, UNKNOWN}, {DIGIT, UNKNOWN}, {OPERATOR_CHAR, UNKNOWN}, {SEPARATOR_CHAR, UNKNOWN}, {SPACE, UNKNOWN}, {OTHER, UNKNOWN}
-    }}
-};
 
 // Function to check if a string is a keyword
 bool isKeyword(const string& word) {
@@ -104,8 +82,8 @@ vector<Token> lexicalAnalyzer(const string& input) {
             }
         }
 
+        // Check for whitespace to separate tokens
         if (isspace(ch)) {
-            // Handle token at the end of whitespace
             if (!token.empty()) {
                 if (isKeyword(token)) {
                     tokens.push_back({KEYWORD, token});
@@ -121,24 +99,11 @@ vector<Token> lexicalAnalyzer(const string& input) {
                 token.clear();
                 currentState = UNKNOWN;
             }
-        } else if (regex_match(string(1, ch), operatorRegex)) {
-            if (!token.empty()) {
-                if (isKeyword(token)) {
-                    tokens.push_back({KEYWORD, token});
-                } else if (regex_match(token, identifierRegex)) {
-                    tokens.push_back({IDENTIFIER, token});
-                } else if (regex_match(token, integerRegex)) {
-                    tokens.push_back({INTEGER, token});
-                } else if (regex_match(token, realRegex)) {
-                    tokens.push_back({REAL, token});
-                } else {
-                    tokens.push_back({UNKNOWN, token});
-                }
-                token.clear();
-            }
-            tokens.push_back({OPERATOR, string(1, ch)});
-            currentState = UNKNOWN;
-        } else if (regex_match(string(1, ch), separatorRegex)) {
+            continue;
+        }
+
+        // Handle separators
+        if (regex_match(string(1, ch), separatorRegex)) {
             if (!token.empty()) {
                 if (isKeyword(token)) {
                     tokens.push_back({KEYWORD, token});
@@ -154,10 +119,35 @@ vector<Token> lexicalAnalyzer(const string& input) {
                 token.clear();
             }
             tokens.push_back({SEPARATOR, string(1, ch)});
-            currentState = UNKNOWN;
-        } else {
-            token += ch;
+            continue;
         }
+
+        // Handle potential real numbers (e.g., 234.567 or 0.001)
+        if (isdigit(ch) || (ch == '.' && !token.empty() && isdigit(token.back()))) {
+            token += ch;
+
+            // Check ahead for a complete real number pattern
+            size_t j = i + 1;
+            while (j < input.length() && (isdigit(input[j]) || input[j] == '.')) {
+                token += input[j];
+                ++j;
+            }
+            i = j - 1;  // Update index to skip processed characters
+
+            // Determine if the entire token matches a real or integer
+            if (regex_match(token, realRegex)) {
+                tokens.push_back({REAL, token});
+            } else if (regex_match(token, integerRegex)) {
+                tokens.push_back({INTEGER, token});
+            } else {
+                tokens.push_back({UNKNOWN, token});
+            }
+            token.clear();
+            continue;
+        }
+
+        // Append character to token if it's part of an identifier or operator
+        token += ch;
     }
 
     // Final token check at the end of input
