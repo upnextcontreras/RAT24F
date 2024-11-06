@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <regex>
-#include <map>
 #include <fstream>
 
 using namespace std;
@@ -22,27 +21,14 @@ struct Token {
 // List of Rat24F keywords
 vector<string> keywords = {"function", "integer", "real", "boolean", "if", "else", "fi", "while", "return", "get", "put", "false", "true"};
 
+// Operators and Separators
+vector<string> operators = {"!=", ">=", "<=", "==", "=>", "=", ">", "<", "+-**", "+", "-", "*", "/"};
+vector<string> separators = {"@)(", "@", "(", ")", "{", "}", ";", ","};
+
 // Regular expressions for matching tokens
-regex identifierRegex("^[a-zA-Z][a-zA-Z0-9]*$"); // Identifiers start with a letter, followed by alphanumeric characters
-regex integerRegex("^(0|[1-9][0-9]*)$");         // Only integers without decimals, handling leading zeros as "0"
-regex realRegex("^(0|[1-9][0-9]*)?\\.[0-9]+$");  // Real numbers with optional leading integer part
-regex operatorRegex("(!=|>=|<=|==|[=><!\\+-/*])"); // Recognizes compound operators
-regex separatorRegex("[(),{};@]");               // Separators
-
-// Define character types
-enum CharType {
-    ALPHA, DIGIT, OPERATOR_CHAR, SEPARATOR_CHAR, SPACE, OTHER
-};
-
-// Function to classify characters
-CharType getCharType(char ch) {
-    if (isalpha(ch)) return ALPHA;
-    if (isdigit(ch)) return DIGIT;
-    if (ch == ' ' || ch == '\t' || ch == '\n') return SPACE;
-    if (string("+-=*/><!").find(ch) != string::npos) return OPERATOR_CHAR;
-    if (string(",(){};@").find(ch) != string::npos) return SEPARATOR_CHAR;
-    return OTHER;
-}
+regex identifierRegex("^[a-zA-Z](?:[a-zA-Z0-9]*[a-zA-Z])?$");  
+regex integerRegex("^[0-9]+$");         
+regex realRegex("^[0-9]+\\.[0-9]+$");  
 
 // Function to check if a string is a keyword
 bool isKeyword(const string& word) {
@@ -62,29 +48,46 @@ string tokenTypeToString(TokenType type) {
     }
 }
 
-// Lexical Analyzer: Tokenize the input program
+// Function to match the longest possible operator
+string matchOperator(const string& input, size_t pos) {
+    size_t maxLen = 0;
+    string matchedOp;
+    for (const string& op : operators) {
+        size_t len = op.length();
+        if (input.substr(pos, len) == op && len > maxLen) {
+            maxLen = len;
+            matchedOp = op;
+        }
+    }
+    return matchedOp;
+}
+
+// Function to match the longest possible separator
+string matchSeparator(const string& input, size_t pos) {
+    size_t maxLen = 0;
+    string matchedSep;
+    for (const string& sep : separators) {
+        size_t len = sep.length();
+        if (input.substr(pos, len) == sep && len > maxLen) {
+            maxLen = len;
+            matchedSep = sep;
+        }
+    }
+    return matchedSep;
+}
+
+// Lexical Analyzer
 vector<Token> lexicalAnalyzer(const string& input) {
     vector<Token> tokens;
     string token;
-    TokenType currentState = UNKNOWN;
 
-    for (size_t i = 0; i < input.length(); ++i) {
+    for (size_t i = 0; i < input.length();) {
         char ch = input[i];
-        CharType charType = getCharType(ch);
 
-        // Handle compound operators (lookahead for next character)
-        if (regex_match(string(1, ch), operatorRegex) && i + 1 < input.length()) {
-            string potentialOp = string(1, ch) + input[i + 1];
-            if (regex_match(potentialOp, operatorRegex)) {
-                tokens.push_back({OPERATOR, potentialOp});
-                ++i; // Skip the next character
-                continue;
-            }
-        }
-
-        // Check for whitespace to separate tokens
+        // Check for whitespace
         if (isspace(ch)) {
             if (!token.empty()) {
+                // Process token
                 if (isKeyword(token)) {
                     tokens.push_back({KEYWORD, token});
                 } else if (regex_match(token, identifierRegex)) {
@@ -97,14 +100,16 @@ vector<Token> lexicalAnalyzer(const string& input) {
                     tokens.push_back({UNKNOWN, token});
                 }
                 token.clear();
-                currentState = UNKNOWN;
             }
+            ++i;
             continue;
         }
 
-        // Handle separators
-        if (regex_match(string(1, ch), separatorRegex)) {
+        // Check for operator
+        string op = matchOperator(input, i);
+        if (!op.empty()) {
             if (!token.empty()) {
+                // Process token
                 if (isKeyword(token)) {
                     tokens.push_back({KEYWORD, token});
                 } else if (regex_match(token, identifierRegex)) {
@@ -118,39 +123,40 @@ vector<Token> lexicalAnalyzer(const string& input) {
                 }
                 token.clear();
             }
-            tokens.push_back({SEPARATOR, string(1, ch)});
+            tokens.push_back({OPERATOR, op});
+            i += op.length();
             continue;
         }
 
-        // Handle potential real numbers (e.g., 234.567 or 0.001)
-        if (isdigit(ch) || (ch == '.' && !token.empty() && isdigit(token.back()))) {
-            token += ch;
-
-            // Check ahead for a complete real number pattern
-            size_t j = i + 1;
-            while (j < input.length() && (isdigit(input[j]) || input[j] == '.')) {
-                token += input[j];
-                ++j;
+        // Check for separator
+        string sep = matchSeparator(input, i);
+        if (!sep.empty()) {
+            if (!token.empty()) {
+                // Process token
+                if (isKeyword(token)) {
+                    tokens.push_back({KEYWORD, token});
+                } else if (regex_match(token, identifierRegex)) {
+                    tokens.push_back({IDENTIFIER, token});
+                } else if (regex_match(token, integerRegex)) {
+                    tokens.push_back({INTEGER, token});
+                } else if (regex_match(token, realRegex)) {
+                    tokens.push_back({REAL, token});
+                } else {
+                    tokens.push_back({UNKNOWN, token});
+                }
+                token.clear();
             }
-            i = j - 1;  // Update index to skip processed characters
-
-            // Determine if the entire token matches a real or integer
-            if (regex_match(token, realRegex)) {
-                tokens.push_back({REAL, token});
-            } else if (regex_match(token, integerRegex)) {
-                tokens.push_back({INTEGER, token});
-            } else {
-                tokens.push_back({UNKNOWN, token});
-            }
-            token.clear();
+            tokens.push_back({SEPARATOR, sep});
+            i += sep.length();
             continue;
         }
 
-        // Append character to token if it's part of an identifier or operator
+        // Append character to token
         token += ch;
+        ++i;
     }
 
-    // Final token check at the end of input
+    // Process final token
     if (!token.empty()) {
         if (isKeyword(token)) {
             tokens.push_back({KEYWORD, token});
@@ -168,7 +174,7 @@ vector<Token> lexicalAnalyzer(const string& input) {
     return tokens;
 }
 
-// Syntax Analyzer: A simple parsing method (this can be extended as per the BNF rules)
+// Syntax Analyzer
 bool syntaxAnalyzer(const vector<Token>& tokens) {
     cout << left << setw(15) << "Token" << "Lexeme" << endl;
     cout << "-------------------------------" << endl;
@@ -179,9 +185,9 @@ bool syntaxAnalyzer(const vector<Token>& tokens) {
     return true;
 }
 
-// Function to process input from a file, ignoring comments
+// File processing
 void processInputFromFile(const string &filename) {
-    ifstream infile(filename);  // Open the file
+    ifstream infile(filename);
     if (!infile) {
         cerr << "Error opening file!" << endl;
         return;
@@ -189,19 +195,14 @@ void processInputFromFile(const string &filename) {
 
     string line, input;
     while (getline(infile, line)) {
-        // Ignore lines starting with "[*"
         if (line.rfind("[*", 0) == 0) {
             continue;
         }
-        input += line + "\n";  // Append each line to input if it doesn't start with "[*"
+        input += line + "\n";
     }
+    infile.close();
 
-    infile.close();  // Close the file after processing
-
-    // Perform lexical analysis
     vector<Token> tokens = lexicalAnalyzer(input);
-
-    // Perform syntax analysis
     syntaxAnalyzer(tokens);
 }
 
