@@ -175,26 +175,40 @@ vector<Token> lexicalAnalyzer(const string& input) {
 }
 
 // Syntax Analyzer
-bool syntaxAnalyzer(const vector<Token>& tokens) {
-    cout << left << setw(15) << "Token" << "Lexeme" << endl;
-    cout << "-------------------------------" << endl;
+bool syntaxAnalyzer(const vector<Token>& tokens, ofstream& outfile) {
+    if (!outfile.is_open()) {
+        cerr << "Output file stream is not open!" << endl;
+        return false;
+    }
+
+    // Write headers
+    outfile << left << setw(15) << "Token" << "Lexeme" << endl;
+    outfile << "-------------------------------" << endl;
 
     for (const Token& token : tokens) {
-        cout << left << setw(15) << tokenTypeToString(token.type) << token.value << endl;
+        outfile << left << setw(15) << tokenTypeToString(token.type) << token.value << endl;
     }
     return true;
 }
 
 // File processing
-void processInputFromFile(const string &filename) {
-    ifstream infile(filename);
+void processInputFromFile(const string &inputFilename, const string &outputFilename) {
+    ifstream infile(inputFilename);
     if (!infile) {
-        cerr << "Error opening file!" << endl;
+        cerr << "Error opening input file: " << inputFilename << endl;
+        return;
+    }
+
+    ofstream outfile(outputFilename);
+    if (!outfile) {
+        cerr << "Error opening output file: " << outputFilename << endl;
+        infile.close();
         return;
     }
 
     string line, input;
     while (getline(infile, line)) {
+        // Skip lines starting with "[*"
         if (line.rfind("[*", 0) == 0) {
             continue;
         }
@@ -203,12 +217,17 @@ void processInputFromFile(const string &filename) {
     infile.close();
 
     vector<Token> tokens = lexicalAnalyzer(input);
-    syntaxAnalyzer(tokens);
+    if (!syntaxAnalyzer(tokens, outfile)) {
+        cerr << "Syntax analysis failed." << endl;
+    }
+    outfile.close();
 }
 
 // Main function
 int main() {
-    string filename = "t1.txt";
-    processInputFromFile(filename);
+    string inputFilename = "t1.txt";
+    string outputFilename = "t1.output.txt";
+    processInputFromFile(inputFilename, outputFilename);
+    cout << "Lexical and syntax analysis completed. Results are in " << outputFilename << endl;
     return 0;
 }
