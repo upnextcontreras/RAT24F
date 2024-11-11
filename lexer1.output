@@ -1,8 +1,0 @@
-Token          Lexeme
--------------------------------
-Identifier     a
-Operator       =
-Identifier     b
-Operator       +
-Identifier     c
-Separator      ;
