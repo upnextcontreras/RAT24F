@@ -1,0 +1,27 @@
+Token          Lexeme
+-------------------------------
+Keyword        while
+Identifier     i
+Operator       <
+Integer        10
+Keyword        do
+Keyword        if
+Identifier     i
+Operator       %
+Integer        2
+Operator       ==
+Integer        0
+Keyword        then
+Keyword        put
+Separator      (
+Identifier     i
+Separator      )
+Separator      ;
+Keyword        fi
+Identifier     i
+Operator       =
+Identifier     i
+Operator       +
+Integer        1
+Separator      ;
+Keyword        od
