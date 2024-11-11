@@ -1,0 +1,36 @@
+<FunctionDeclaration> -> function <Identifier> ( [<ParameterList>] ) <FunctionBody>
+Token: Keyword Lexeme: function
+Token: Identifier Lexeme: add
+Token: Separator Lexeme: (
+ (
+  <ParameterList> -> <Parameter> { , <Parameter> }
+   <Parameter> -> <Identifier>
+Token: Identifier Lexeme: x
+Token: Separator Lexeme: ,
+   ,
+   <Parameter> -> <Identifier>
+Token: Identifier Lexeme: y
+Token: Separator Lexeme: )
+  )
+ <FunctionBody> -> { { <Declaration> | <Statement> } }
+Token: Separator Lexeme: {
+  {
+   <Statement> -> <ReturnStatement>
+   <ReturnStatement> -> return <Expression> ;
+Token: Keyword Lexeme: return
+    <Expression> -> <Term> <Expression Prime>
+     <Term> -> <Factor> <Term Prime>
+      <Factor> -> <Identifier>
+Token: Identifier Lexeme: x
+      <Term Prime> -> ε
+     <Expression Prime> -> + <Term> <Expression Prime>
+Token: Operator Lexeme: +
+      <Term> -> <Factor> <Term Prime>
+       <Factor> -> <Identifier>
+Token: Identifier Lexeme: y
+       <Term Prime> -> ε
+      <Expression Prime> -> ε
+Token: Separator Lexeme: ;
+    ;
+Token: Separator Lexeme: }
+   }

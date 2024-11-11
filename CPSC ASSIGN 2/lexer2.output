@@ -1,0 +1,16 @@
+Token          Lexeme
+-------------------------------
+Keyword        function
+Identifier     add
+Separator      (
+Identifier     x
+Separator      ,
+Identifier     y
+Separator      )
+Separator      {
+Keyword        return
+Identifier     x
+Operator       +
+Identifier     y
+Separator      ;
+Separator      }
