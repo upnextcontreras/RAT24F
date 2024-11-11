@@ -1,0 +1,28 @@
+﻿
+[* operator *]
+= != > < <= => + - * / ==    
++-**
+
+[* separator *]
+@ { } ; , ( ) =
+@)(
+
+[* keyword *]
+function integer boolean if return while else get put true false real put 
+
+[* integer *]
+1 1000 99 00000000000000
+
+[* real *]
+234.567 9.000001 000.00
+
+[* identifier *]
+zZZZ Zzzz a1z4r zbcde12345x  x Integer FI Put endif
+
+[* wrongTokens *]
+  $  
+  _  
+  asd12   
+  23rty
+  000.  
+  .123
