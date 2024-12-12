@@ -1,0 +1,11 @@
+@ 
+integer num, factor, result; [* declarations *]
+result = 1;
+num = 1;
+get (factor);
+while (num <= factor) {
+result = result * num;
+num = num + 1;
+}
+put (result);
+@

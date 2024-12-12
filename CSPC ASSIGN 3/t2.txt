@@ -1,0 +1,11 @@
+@
+integer i, max, sum; [* declarations *]
+sum = 5; [* Starting with a non-zero sum *]
+i = 2; [* Start loop with a different initial value for i *]
+get (max);
+while (i <= max) { [* Use <= instead of < *]
+    sum = sum + i;
+    i = i + 2; [* Increment i by 2 instead of 1 *]
+}
+put (sum * max); [* Output sum multiplied by max *]
+@

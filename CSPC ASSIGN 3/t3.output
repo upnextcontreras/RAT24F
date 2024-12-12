@@ -1,0 +1,31 @@
+Assembly Code:
+1 PUSHI 0
+2 POPM 9002
+3 PUSHI 1
+4 POPM 9000
+5 STDIN 
+6 POPM 9001
+7 LABEL 
+8 PUSHM 9000
+9 PUSHM 9001
+10 LES 
+11 JUMPZ 21
+12 PUSHM 9002
+13 PUSHM 9000
+14 ADD 
+15 POPM 9002
+16 PUSHM 9000
+17 PUSHI 1
+18 ADD 
+19 POPM 9000
+20 JUMP 7
+21 PUSHM 9002
+22 PUSHM 9001
+23 ADD 
+24 STDOUT 
+
+Symbol Table:
+     Identifier      MemoryLocation     Type
+              i                9000   integer
+            max                9001   integer
+            sum                9002   integer
